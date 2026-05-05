@@ -36,8 +36,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
 }
+
+/* Don't set overflow-x:hidden on <html> or <body> — that auto-promotes
+   <body> to a scroll container which breaks `position: sticky` for any
+   pinned ancestor like the 500vh hero. Each section already constrains
+   its own horizontal overflow via Tailwind classes. */
 
 body {
   position: relative;
