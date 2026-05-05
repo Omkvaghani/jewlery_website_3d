@@ -50,11 +50,11 @@ export default function Featured() {
     const lowMem =
       typeof navigator !== "undefined" &&
       typeof (navigator as NavWithMem).deviceMemory === "number" &&
-      ((navigator as NavWithMem).deviceMemory ?? 8) <= 2;
+      ((navigator as NavWithMem).deviceMemory ?? 8) < 2;
     const lowCpu =
       typeof navigator !== "undefined" &&
       typeof navigator.hardwareConcurrency === "number" &&
-      navigator.hardwareConcurrency <= 2;
+      navigator.hardwareConcurrency < 2;
     const update = () => setLite(w.matches || m.matches || lowMem || lowCpu);
     update();
     w.addEventListener("change", update);

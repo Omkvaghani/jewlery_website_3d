@@ -49,14 +49,18 @@ export default function Hero() {
     const w = window.matchMedia("(max-width: 1024px)");
     const m = window.matchMedia("(prefers-reduced-motion: reduce)");
     type NavWithMem = Navigator & { deviceMemory?: number };
+    // Treat a device as "weak" only if it is genuinely tiny: 1GB RAM or
+    // 1 logical core. The optimized canvas (no transmission shader, no
+    // HDR env, ~80 particles, adaptive DPR) runs comfortably on a 2-core
+    // 4GB integrated GPU.
     const lowMem =
       typeof navigator !== "undefined" &&
       typeof (navigator as NavWithMem).deviceMemory === "number" &&
-      ((navigator as NavWithMem).deviceMemory ?? 8) <= 2;
+      ((navigator as NavWithMem).deviceMemory ?? 8) < 2;
     const lowCpu =
       typeof navigator !== "undefined" &&
       typeof navigator.hardwareConcurrency === "number" &&
-      navigator.hardwareConcurrency <= 2;
+      navigator.hardwareConcurrency < 2;
     const update = () => {
       setMobile(w.matches || lowMem || lowCpu);
       setReducedMotion(m.matches);
