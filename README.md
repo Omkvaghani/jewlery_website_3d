@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lumière
+
+A cinematic, scroll-driven 3D luxury jewelry experience built with **Next.js
+14**, **React Three Fiber**, **GSAP / Lenis**, and **Framer Motion**.
+
+The experience is designed as **storytelling, not navigation** — every
+section reveals a phase of a single diamond's journey from raw stone to a
+ring on a human hand.
+
+## Story Architecture
+
+| Section            | Story Beat                                              |
+| ------------------ | -------------------------------------------------------- |
+| **Hero**           | 5-phase scroll-driven 3D ring formation                 |
+| **About**          | Line-by-line philosophy reveal                          |
+| **Collection**     | 3D-tilt product grid + 360° viewer modal                |
+| **Craftsmanship**  | 6-stage parallax timeline (Origin → Perfection)         |
+| **Featured**       | Atelier flagship with floating UI labels                |
+| **Voices**         | 3D depth-shifted testimonial carousel                   |
+| **Footer**         | Newsletter glow + minimal premium nav                   |
+
+## Tech Stack
+
+- **Next.js 14** (App Router) · **TypeScript** · **Tailwind CSS**
+- **Three.js** + `@react-three/fiber` + `@react-three/drei`
+- **MeshTransmissionMaterial** for physically plausible diamond refraction
+- **HDR studio environment** (Drei's `Environment` preset)
+- **Lenis** smooth scroll engine + **GSAP ScrollTrigger**
+- **Framer Motion** for choreography & scroll-linked transforms
+- Custom **magnetic cursor**, magnetic buttons, glassmorphism, metallic
+  gradient text
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/                 # Next.js app router (layout, page, globals.css)
+  components/
+    sections/          # One file per page section
+    three/             # Three.js / R3F components and scenes
+    ui/                # Reusable interaction primitives
+  lib/utils.ts         # Helpers (cn, lerp, phase, smoothstep, ...)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Replacing Procedural Geometry With Real GLBs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The diamond, ring, and hand are procedurally generated so the project runs
+without binary assets. To swap in production-grade models:
 
-## Deploy on Vercel
+1. Place `.glb` files in `public/models/`
+2. In `src/components/three/RingScene.tsx`, replace the procedural
+   `<DiamondMesh />`, `<RingMesh />`, `<HandSilhouette />` with
+   `useGLTF('/models/<name>.glb')` results from `@react-three/drei`.
+3. Add `useGLTF.preload(...)` and `loading="eager"` for the hero asset.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Performance
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Three.js scenes are loaded with `next/dynamic` and `ssr: false`
+- DPR is clamped to `[1, 1.6]` and `[1, 1.5]` for the hero / product viewer
+- `prefers-reduced-motion` short-circuits the smooth-scroll engine and
+  animation durations
+- Mobile (≤768px) replaces the heaviest hero scene with a CSS-only fallback
+
+## Notes
+
+- Scroll the hero section slowly — its sticky pin is 5 viewport heights tall
+  and the ring formation is mapped piecewise across that range.
+- The custom cursor is hidden on touch / coarse-pointer devices.
