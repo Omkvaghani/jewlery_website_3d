@@ -35,7 +35,27 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
 
     lenis.on("scroll", ScrollTrigger.update);
 
+    const handleAnchor = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const anchor = target?.closest?.("a[href^='#']") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href === "#") return;
+      const id = href.slice(1);
+      const el = document.getElementById(id);
+      if (!el) return;
+      e.preventDefault();
+      lenis.scrollTo(el, { offset: -80 });
+    };
+    document.addEventListener("click", handleAnchor);
+
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event("resize"));
+      window.dispatchEvent(new Event("scroll"));
+    });
+
     return () => {
+      document.removeEventListener("click", handleAnchor);
       gsap.ticker.remove(raf);
       lenis.destroy();
       lenisRef.current = null;

@@ -74,7 +74,7 @@ export default function Featured() {
                 key={f.label}
                 initial={{ opacity: 0, x: -16 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.6 }}
+                viewport={{ once: true, amount: 0.15 }}
                 transition={{
                   duration: 0.7,
                   delay: i * 0.1,
@@ -103,7 +103,7 @@ export default function Featured() {
               key={`label-${f.label}`}
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, amount: 0.5 }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{
                 duration: 0.6,
                 delay: 0.3 + i * 0.15,

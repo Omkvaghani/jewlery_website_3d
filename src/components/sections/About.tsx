@@ -31,7 +31,7 @@ export default function About() {
         <motion.span
           initial={{ opacity: 0, y: 8 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.6 }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="eyebrow"
         >
@@ -48,7 +48,7 @@ export default function About() {
               key={i}
               initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.5 }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{
                 duration: 1.0,
                 delay: i * 0.12,
@@ -84,7 +84,7 @@ function Stat({ label, value }: { label: string; value: string }) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.6 }}
+      viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: 0.7 }}
       className="flex flex-col gap-2"
     >

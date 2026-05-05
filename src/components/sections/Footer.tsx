@@ -113,7 +113,7 @@ export default function Footer() {
               key={col.title}
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.5 }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.6, delay: idx * 0.05 }}
               className="md:col-span-2"
             >
