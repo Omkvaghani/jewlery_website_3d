@@ -2,8 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useTransform } from "framer-motion";
 import MagneticButton from "@/components/ui/MagneticButton";
+import { useSectionProgress } from "@/lib/hooks";
 
 const RingScene = dynamic(() => import("@/components/three/RingScene"), {
   ssr: false,
@@ -24,40 +25,78 @@ const phaseLabels = [
 
 export default function Hero() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
   const [activePhase, setActivePhase] = useState(0);
   const [mobile, setMobile] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [canvasReady, setCanvasReady] = useState(false);
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end end"],
-  });
+  const { progress, progressMV } = useSectionProgress(sectionRef);
 
   // Headline opacity follows scroll
-  const headOpacity = useTransform(scrollYProgress, [0, 0.18, 0.85, 1], [
+  const headOpacity = useTransform(progressMV, [0, 0.18, 0.85, 1], [
     1, 0.95, 0.0, 0.0,
   ]);
-  const subOpacity = useTransform(scrollYProgress, [0, 0.12, 0.7, 1], [
+  const subOpacity = useTransform(progressMV, [0, 0.12, 0.7, 1], [
     1, 0.9, 0.0, 0.0,
   ]);
-  const ctaY = useTransform(scrollYProgress, [0, 1], [0, -120]);
+  const ctaY = useTransform(progressMV, [0, 1], [0, -120]);
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 768px)");
-    const update = () => setMobile(mq.matches);
+    // Use the static poster on tablets and phones (≤1024px) and when the
+    // user prefers reduced motion or the device looks under-powered. This
+    // keeps the page durable on cheap laptops and integrated GPUs without
+    // sacrificing the cinematic feel on capable hardware.
+    const w = window.matchMedia("(max-width: 1024px)");
+    const m = window.matchMedia("(prefers-reduced-motion: reduce)");
+    type NavWithMem = Navigator & { deviceMemory?: number };
+    const lowMem =
+      typeof navigator !== "undefined" &&
+      typeof (navigator as NavWithMem).deviceMemory === "number" &&
+      ((navigator as NavWithMem).deviceMemory ?? 8) <= 2;
+    const lowCpu =
+      typeof navigator !== "undefined" &&
+      typeof navigator.hardwareConcurrency === "number" &&
+      navigator.hardwareConcurrency <= 2;
+    const update = () => {
+      setMobile(w.matches || lowMem || lowCpu);
+      setReducedMotion(m.matches);
+    };
     update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+    w.addEventListener("change", update);
+    m.addEventListener("change", update);
+    return () => {
+      w.removeEventListener("change", update);
+      m.removeEventListener("change", update);
+    };
+  }, []);
+
+  // Mount the heavy Canvas only when the hero section is actually in the
+  // viewport. With our 500vh sticky-pin section this is true on initial
+  // load anyway, but if a user lands deep-linked further down the page we
+  // skip the cost entirely.
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setCanvasReady(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setCanvasReady(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
   useEffect(() => {
-    const unsub = scrollYProgress.on("change", (v) => {
-      setProgress(v);
-      const idx = Math.min(4, Math.floor(v / 0.2));
-      setActivePhase(idx);
-    });
-    return () => unsub();
-  }, [scrollYProgress]);
+    const idx = Math.min(4, Math.floor(progress / 0.2));
+    setActivePhase(idx);
+  }, [progress]);
 
   return (
     <section
@@ -77,9 +116,10 @@ export default function Hero() {
           }}
         />
 
-        {/* 3D Canvas (desktop) — replaced with poster gradient on mobile */}
+        {/* 3D Canvas (desktop) — replaced with poster gradient on mobile,
+            low-memory devices, and when the user prefers reduced motion. */}
         <div className="absolute inset-0">
-          {!mobile ? (
+          {!mobile && !reducedMotion && canvasReady ? (
             <RingScene progress={progress} />
           ) : (
             <MobileFallback />

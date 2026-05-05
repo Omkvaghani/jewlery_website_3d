@@ -9,7 +9,7 @@ type Props = {
   radius?: number;
 };
 
-export default function DiamondDust({ count = 350, radius = 6 }: Props) {
+export default function DiamondDust({ count = 80, radius = 4 }: Props) {
   const ref = useRef<THREE.Points>(null);
 
   const { positions, sizes } = useMemo(() => {
@@ -27,10 +27,9 @@ export default function DiamondDust({ count = 350, radius = 6 }: Props) {
     return { positions, sizes };
   }, [count, radius]);
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (!ref.current) return;
     ref.current.rotation.y += delta * 0.04;
-    ref.current.rotation.x += delta * 0.015;
   });
 
   return (
@@ -51,10 +50,10 @@ export default function DiamondDust({ count = 350, radius = 6 }: Props) {
       </bufferGeometry>
       <pointsMaterial
         color="#fff5d6"
-        size={0.035}
+        size={0.04}
         sizeAttenuation
         transparent
-        opacity={0.8}
+        opacity={0.7}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
       />

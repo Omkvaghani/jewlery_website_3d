@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment, OrbitControls, ContactShadows } from "@react-three/drei";
+import { OrbitControls, AdaptiveDpr } from "@react-three/drei";
 import DiamondMesh from "./DiamondMesh";
 import RingMesh, { type RingMaterial } from "./RingMesh";
 
@@ -14,20 +14,22 @@ type Props = {
 export default function ProductViewer({ material }: Props) {
   return (
     <Canvas
-      shadows
-      dpr={[1, 1.5]}
+      dpr={[1, 1.25]}
       camera={{ position: [0, 0.6, 4], fov: 38 }}
-      gl={{ antialias: true }}
+      gl={{ antialias: true, alpha: true }}
     >
+      <AdaptiveDpr pixelated={false} />
       <Suspense fallback={null}>
-        <Environment preset="studio" environmentIntensity={0.6} />
-        <ambientLight intensity={0.2} />
+        <hemisphereLight
+          intensity={0.6}
+          color="#fff1c5"
+          groundColor="#0a0a0e"
+        />
         <spotLight
           position={[3, 4, 3]}
-          intensity={2.2}
+          intensity={2.0}
           angle={0.5}
           penumbra={1}
-          castShadow
         />
         <spotLight
           position={[-3, 2, -2]}
@@ -43,15 +45,6 @@ export default function ProductViewer({ material }: Props) {
             <DiamondMesh />
           </group>
         </group>
-
-        <ContactShadows
-          position={[0, -1.4, 0]}
-          opacity={0.6}
-          blur={2.4}
-          far={4}
-          resolution={512}
-          color="#000000"
-        />
 
         <OrbitControls
           enablePan={false}

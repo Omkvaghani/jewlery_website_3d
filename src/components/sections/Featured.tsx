@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useTransform } from "framer-motion";
+import { useSectionProgress } from "@/lib/hooks";
 
 const RingScene = dynamic(() => import("@/components/three/RingScene"), {
   ssr: false,
@@ -28,23 +29,64 @@ const FEATURES = [
 
 export default function Featured() {
   const ref = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0.45);
+  const canvasWrapRef = useRef<HTMLDivElement>(null);
+  const [scenicProgress, setScenicProgress] = useState(0.55);
+  const [mountCanvas, setMountCanvas] = useState(false);
+  const [lite, setLite] = useState(false);
 
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
+  const { progress, progressMV } = useSectionProgress(ref, "viewport");
 
-  // Map scroll into the ring scene's later-half (polished + connection-ish)
+  // Hold around polish phase (0.55..0.78) so the finished ring is the centerpiece.
   useEffect(() => {
-    const unsub = scrollYProgress.on("change", (v) => {
-      // Hold around polish phase (0.55..0.78) so the finished ring is the centerpiece.
-      setProgress(0.55 + v * 0.22);
-    });
-    return () => unsub();
-  }, [scrollYProgress]);
+    setScenicProgress(0.55 + progress * 0.22);
+  }, [progress]);
 
-  const titleY = useTransform(scrollYProgress, [0, 1], [40, -40]);
+  // Skip the secondary 3D canvas on weak devices so the page stays
+  // responsive even when the GPU is already taxed by the hero scene.
+  useEffect(() => {
+    const w = window.matchMedia("(max-width: 1024px)");
+    const m = window.matchMedia("(prefers-reduced-motion: reduce)");
+    type NavWithMem = Navigator & { deviceMemory?: number };
+    const lowMem =
+      typeof navigator !== "undefined" &&
+      typeof (navigator as NavWithMem).deviceMemory === "number" &&
+      ((navigator as NavWithMem).deviceMemory ?? 8) <= 2;
+    const lowCpu =
+      typeof navigator !== "undefined" &&
+      typeof navigator.hardwareConcurrency === "number" &&
+      navigator.hardwareConcurrency <= 2;
+    const update = () => setLite(w.matches || m.matches || lowMem || lowCpu);
+    update();
+    w.addEventListener("change", update);
+    m.addEventListener("change", update);
+    return () => {
+      w.removeEventListener("change", update);
+      m.removeEventListener("change", update);
+    };
+  }, []);
+
+  // Mount the canvas only when this section is about to enter the viewport.
+  // Saves a second WebGL context and ~3MB of shaders on first paint.
+  useEffect(() => {
+    const el = canvasWrapRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setMountCanvas(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setMountCanvas(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "300px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const titleY = useTransform(progressMV, [0, 1], [40, -40]);
 
   return (
     <section
@@ -94,8 +136,24 @@ export default function Featured() {
           </div>
         </motion.div>
 
-        <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-ink-800">
-          <RingScene progress={progress} />
+        <div
+          ref={canvasWrapRef}
+          className="relative aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-ink-800"
+        >
+          {mountCanvas && !lite ? (
+            <RingScene progress={scenicProgress} />
+          ) : (
+            <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-ink-800 via-ink-700 to-ink-900">
+              <div
+                className="h-44 w-44 rotate-45 animate-floaty bg-gradient-platinum opacity-90"
+                style={{
+                  clipPath:
+                    "polygon(50% 0%, 100% 35%, 80% 100%, 20% 100%, 0% 35%)",
+                  filter: "drop-shadow(0 0 40px rgba(255,231,180,0.55))",
+                }}
+              />
+            </div>
+          )}
 
           {/* Floating UI labels */}
           {FEATURES.map((f, i) => (

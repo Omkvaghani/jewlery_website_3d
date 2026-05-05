@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useTransform } from "framer-motion";
+import { useSectionProgress } from "@/lib/hooks";
 
 const STAGES = [
   {
@@ -65,23 +66,17 @@ export default function Craftsmanship() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end end"],
-  });
+  const { progress, progressMV } = useSectionProgress(sectionRef);
 
   // Background parallax layers
-  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "-30%"]);
-  const midY = useTransform(scrollYProgress, [0, 1], ["0%", "-50%"]);
-  const fgY = useTransform(scrollYProgress, [0, 1], ["0%", "-70%"]);
+  const bgY = useTransform(progressMV, [0, 1], ["0%", "-30%"]);
+  const midY = useTransform(progressMV, [0, 1], ["0%", "-50%"]);
+  const fgY = useTransform(progressMV, [0, 1], ["0%", "-70%"]);
 
   useEffect(() => {
-    const unsub = scrollYProgress.on("change", (v) => {
-      const idx = Math.min(STAGES.length - 1, Math.floor(v * STAGES.length));
-      setActive(idx);
-    });
-    return () => unsub();
-  }, [scrollYProgress]);
+    const idx = Math.min(STAGES.length - 1, Math.floor(progress * STAGES.length));
+    setActive(idx);
+  }, [progress]);
 
   const stage = STAGES[active];
 

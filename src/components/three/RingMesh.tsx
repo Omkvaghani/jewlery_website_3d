@@ -27,8 +27,10 @@ const RingMesh = forwardRef<THREE.Group, Props>(function RingMesh(
   },
   ref,
 ) {
+  // Lower segment counts keep the band smooth-looking while ~halving
+  // triangle count vs. (32 × 96).
   const torus = useMemo(
-    () => new THREE.TorusGeometry(1, 0.18, 32, 96),
+    () => new THREE.TorusGeometry(1, 0.18, 20, 64),
     [],
   );
 

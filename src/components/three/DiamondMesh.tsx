@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import * as THREE from "three";
-import { MeshTransmissionMaterial } from "@react-three/drei";
 
 /**
  * Procedural brilliant-cut diamond geometry built from a low-poly cone (crown)
@@ -11,20 +10,14 @@ import { MeshTransmissionMaterial } from "@react-three/drei";
  */
 function buildDiamondGeometry(): THREE.BufferGeometry {
   const crown = new THREE.ConeGeometry(1, 0.45, 16, 1);
-  // Move crown so its base sits at y=0
   crown.translate(0, 0.225, 0);
 
   const pavilion = new THREE.ConeGeometry(1, 1.1, 16, 1);
   pavilion.rotateX(Math.PI);
-  // Pavilion below the girdle
   pavilion.translate(0, -0.55, 0);
 
   const girdle = new THREE.CylinderGeometry(1, 1, 0.04, 16, 1, false);
-  // Girdle band
-  girdle.translate(0, 0, 0);
 
-  // Merge: BufferGeometryUtils available via three-stdlib / drei isn't strictly
-  // needed here — we just use a Group-like merge by concatenating attributes.
   const geometries: THREE.BufferGeometry[] = [crown, girdle, pavilion];
   const merged = mergeGeometries(geometries);
   merged.computeVertexNormals();
@@ -79,30 +72,30 @@ export default function DiamondMesh({
 }: Props) {
   const geom = useMemo(() => buildDiamondGeometry(), []);
 
+  // MeshPhysicalMaterial with transmission gives a close-enough refractive
+  // diamond at a fraction of the GPU cost of MeshTransmissionMaterial
+  // (which renders the scene 4–8 extra times per frame for refraction).
+  // This single-pass approach runs comfortably on integrated GPUs.
   return (
     <mesh
       geometry={geom}
       scale={scale}
       position={position}
       rotation={rotation}
-      castShadow
-      receiveShadow
     >
-      <MeshTransmissionMaterial
-        backside
-        samples={8}
-        thickness={0.45}
-        roughness={0.02}
-        transmission={1}
-        ior={2.4}
-        chromaticAberration={0.08}
-        anisotropy={0.3}
-        distortion={0.1}
-        distortionScale={0.4}
-        temporalDistortion={0.05}
-        attenuationDistance={0.6}
-        attenuationColor="#ffffff"
+      <meshPhysicalMaterial
         color="#ffffff"
+        transmission={0.95}
+        thickness={0.5}
+        ior={2.4}
+        roughness={0.05}
+        metalness={0}
+        attenuationColor="#ffffff"
+        attenuationDistance={0.6}
+        clearcoat={1}
+        clearcoatRoughness={0.05}
+        envMapIntensity={1.2}
+        side={THREE.DoubleSide}
       />
     </mesh>
   );
